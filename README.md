@@ -2,7 +2,7 @@
 
 A beautiful, glassmorphic web-based music player designed for landscape orientation, built with HTML, CSS, and JavaScript. 
 
-![Player UI](https://placehold.co/800x480/0f0c1b/1db954?text=Gana+Bjana)
+![Player UI](https://placehold.co/500X250/0f0c1b/1db954?text=Gana+Bjana)
 
 ## Features
 
