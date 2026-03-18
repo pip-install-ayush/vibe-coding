@@ -67,7 +67,7 @@
             border: 1px solid rgba(255, 255, 255, 0.08);
             padding: 40px;
             flex-grow: 1; 
-            height: 100%; 
+            height: 500px; 
             box-shadow:
                 0 30px 60px rgba(0, 0, 0, 0.6),
                 inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -124,7 +124,7 @@
             right: 0;
             width: 300px;
             margin-top: 10px;
-            background: rgba(20, 20, 25, 0.95);
+            background: rgba(255, 255, 255, 0.01);
             backdrop-filter: blur(20px);
             border-radius: 12px;
             list-style: none;
@@ -213,7 +213,7 @@
         
         .queue-sidebar {
             width: 320px;
-            height: 100%; /* Take full height of the container */
+            height: 500px; /* Take full height of the container */
             display: flex;
             flex-direction: column;
             flex-shrink: 0;
@@ -622,11 +622,17 @@
             document.getElementById("status").innerText =
                 "Account Error: " + message;
         });
+        let previousState = null;
         player.addListener("player_state_changed", (state) => {
             if (!state) return;
-            document.getElementById("play-pause-btn").innerText = state.paused
-                ? "▶"
-                : "⏸";
+            document.getElementById("play-pause-btn").innerText = state.paused ? "▶" : "⏸";
+
+            if (previousState && !previousState.paused && state.paused && state.position === 0) {
+                if (state.track_window.next_tracks.length === 0 && !isAutoplaying) {
+                    triggerAutoplay();
+                }
+            }
+            previousState = state;
 
             const t = state.track_window.current_track;
             if (currentTrackId !== t.id) {
@@ -638,62 +644,83 @@
                 document.getElementById("bg-layer").style.backgroundImage = `url('${t.album.images[0].url}')`;
                 updateLyrics(t.name, currentArtist, t.id);
                 
-                // Fetch the real queue from the Spotify API
-                fetch(`${AB}/me/player/queue`, {
-                    headers: { Authorization: `Bearer ${accessToken}` }
-                })
-                .then(res => res.json())
-                .then(data => {
-                    const queueBox = document.getElementById("queue-list");
-                    queueBox.innerHTML = "";
-                    
-                    if (data && data.queue && data.queue.length > 0) {
-                        // The Spotify /queue endpoint is notoriously buggy and often returns 
-                        // history + duplicates. We must hard-filter it.
-                        const seenIds = new Set();
-                        // Do NOT pre-add t.id here. Spotify's API behaves weirdly 
-                        // and sometimes we need to see the raw array to not end up with 0 elements.
-                        
-                        const actualQueue = [];
-                        for (const track of data.queue) {
-                            if (track.id && !seenIds.has(track.id)) {
-                                seenIds.add(track.id);
-                                actualQueue.push(track);
-                            }
-                        }
-                        
-                        if (actualQueue.length > 0) {
-                            window.ganaBjanaActive = false;
-                            const limit = Math.min(actualQueue.length, 20);
-                            for (let i = 0; i < limit; i++) {
-                                const track = actualQueue[i];
-                                const el = document.createElement("div");
-                                el.className = "queue-item";
-                                let imgUrl = "https://placehold.co/40x40/1db954/white?text=%E2%99%AB";
-                                if (track.album && track.album.images && track.album.images.length > 0) {
-                                    imgUrl = track.album.images[0].url;
-                                }
-                                el.innerHTML = `<img src="${imgUrl}"><div class="queue-item-info"><div class="queue-item-title">${track.name}</div><div class="queue-item-artist">${track.artists[0].name}</div></div><div style="font-size: 16px; opacity: 0.5;">▶</div>`;
-                                el.title = "Play this track";
-                                el.onclick = function() { play(track.uri); };
-                                el.style.cursor = "pointer";
-                                el.title = "Play this track";
-                                queueBox.appendChild(el);
-                            }
-                        } else {
-                             loadGanaBjana(queueBox);
-                        }
-                    } else {
-                        loadGanaBjana(queueBox);
-                    }
-                })
-                .catch(err => {
-                    console.error("Failed to fetch queue", err);
-                    document.getElementById("queue-list").innerHTML = '<div style="font-size: 13px; color: rgba(255,255,255,0.4); text-align: center; margin-top: 50px;">Queue is empty.<br>Gana Bjana will find next!</div>';
-                });
+                refreshQueue();
+                setTimeout(refreshQueue, 1500);
             }
         });
         player.connect();
+    }
+
+    let lastGanaBjanaLoad = 0;
+    function refreshQueue() {
+        if (!accessToken) return;
+        fetch(`${AB}/me/player/queue`, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+        })
+        .then(res => res.json())
+        .then(data => {
+            const queueBox = document.getElementById("queue-list");
+            let actualQueue = [];
+            
+            if (data && data.queue && data.queue.length > 0) {
+                const seenIds = new Set();
+                for (const track of data.queue) {
+                    if (track.id && track.id !== currentTrackId && !seenIds.has(track.id)) {
+                        seenIds.add(track.id);
+                        actualQueue.push(track);
+                    }
+                }
+            }
+            
+            if (actualQueue.length > 0) {
+                window.ganaBjanaActive = false;
+                window.ganaBjanaQueue = [];
+                queueBox.innerHTML = "";
+                const limit = Math.min(actualQueue.length, 20);
+                for (let i = 0; i < limit; i++) {
+                    const track = actualQueue[i];
+                    appendTrackToUI(queueBox, track, true);
+                }
+            } else {
+                window.ganaBjanaActive = true;
+                if (window.ganaBjanaQueue && window.ganaBjanaQueue.length > 0) {
+                    queueBox.innerHTML = "";
+                    const header = document.createElement("div");
+                    header.style.cssText = "font-size: 10px; color: rgba(255, 255, 255, 0.6); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-weight: bold; text-align: center;";
+                    header.innerText = "Gana Bjana Recommended Mode";
+                    queueBox.appendChild(header);
+                    
+                    for (let i = 0; i < window.ganaBjanaQueue.length; i++) {
+                        appendTrackToUI(queueBox, window.ganaBjanaQueue[i], false);
+                    }
+                } else {
+                    if (Date.now() - lastGanaBjanaLoad > 3000) {
+                        lastGanaBjanaLoad = Date.now();
+                        loadGanaBjana(queueBox);
+                    }
+                }
+            }
+        })
+        .catch(err => {
+            console.error("Failed to fetch queue", err);
+        });
+    }
+
+    function appendTrackToUI(queueBox, track, isSpotifyQueue) {
+        const el = document.createElement("div");
+        el.className = "queue-item";
+        let imgUrl = "https://placehold.co/40x40/1db954/white?text=%E2%99%AB";
+        if (track.album && track.album.images && track.album.images.length > 0) {
+            imgUrl = track.album.images[0].url;
+        }
+        el.innerHTML = `<img src="${imgUrl}"><div class="queue-item-info"><div class="queue-item-title">${track.name}</div><div class="queue-item-artist">${track.artists[0].name}</div></div><div style="font-size: 16px; opacity: 0.5;">▶</div>`;
+        el.title = "Play this track";
+        el.onclick = function() { 
+            if (!isSpotifyQueue) { window.ganaBjanaQueue = []; }
+            play(track.uri); 
+        };
+        el.style.cursor = "pointer";
+        queueBox.appendChild(el);
     }
 
 
@@ -783,27 +810,17 @@
 
     function loadGanaBjana(queueBox) {
         fetchGanaBjanaRecommendations().then(recs => {
-            window.ganaBjanaQueue = recs;
-            window.ganaBjanaActive = true;
             if (recs && recs.length > 0) {
+                window.ganaBjanaQueue = recs;
+                window.ganaBjanaActive = true;
+                queueBox.innerHTML = "";
                 const header = document.createElement("div");
                 header.style.cssText = "font-size: 10px; color: rgba(255, 255, 255, 0.6); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-weight: bold; text-align: center;";
                 header.innerText = "Gana Bjana Recommended Mode";
                 queueBox.appendChild(header);
                 
                 for (let i = 0; i < recs.length; i++) {
-                    const track = recs[i];
-                    const el = document.createElement("div");
-                    el.className = "queue-item";
-                    let imgUrl = "https://placehold.co/40x40/1db954/white?text=%E2%99%AB";
-                    if (track.album && track.album.images && track.album.images.length > 0) {
-                        imgUrl = track.album.images[0].url;
-                    }
-                    el.innerHTML = `<img src="${imgUrl}"><div class="queue-item-info"><div class="queue-item-title">${track.name}</div><div class="queue-item-artist">${track.artists[0].name}</div></div><div style="font-size: 16px; opacity: 0.5;">▶</div>`;
-                    el.onclick = () => { window.ganaBjanaQueue = []; play(track.uri); };
-                    el.style.cursor = "pointer";
-                    el.title = "Play this suggestion";
-                    queueBox.appendChild(el);
+                    appendTrackToUI(queueBox, recs[i], false);
                 }
             } else {
                 queueBox.innerHTML = '<div style="font-size: 13px; color: rgba(255,255,255,0.4); text-align: center; margin-top: 50px;">Gana Bjana found no tracks.</div>';
@@ -819,9 +836,14 @@
             let nextUri = null;
             if (window.ganaBjanaActive && window.ganaBjanaQueue && window.ganaBjanaQueue.length > 0) {
                 nextUri = window.ganaBjanaQueue[0].uri;
+                window.ganaBjanaQueue.shift();
             } else {
                 const recs = await fetchGanaBjanaRecommendations();
-                if (recs && recs.length > 0) nextUri = recs[0].uri;
+                if (recs && recs.length > 0) {
+                     nextUri = recs[0].uri;
+                     window.ganaBjanaQueue = recs.slice(1);
+                     window.ganaBjanaActive = true;
+                }
             }
             if (nextUri) {
                 await play(nextUri);
@@ -943,15 +965,9 @@
                 }
             }
 
-            if (
-                pos > 0 &&
-                state.duration > 0 &&
-                state.duration - pos < 2000 &&
-                !state.paused
-            ) {
-                if (!isAutoplaying && state.track_window.next_tracks.length === 0) {
-                    triggerAutoplay();
-                }
+            // Check if track is very close to stalling out and didn't trigger autoplay naturally
+            if (pos > 0 && state.duration > 0 && state.duration - pos < 500 && !state.paused && state.track_window.next_tracks.length === 0 && !isAutoplaying) {
+                triggerAutoplay();
             }
         }, 300);
     }
