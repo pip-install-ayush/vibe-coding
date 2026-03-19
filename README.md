@@ -4,7 +4,6 @@ A beautiful, glassmorphic web-based music player designed for landscape orientat
 
 ![Player UI](https://placehold.co/500X250/0f0c1b/1db954?text=Gana+Bjana)
 
-![Gana Bjana - Current Song Screen](./image_18.png)
 ## Features
 
 * **Spotify Premium Integration:** Connects directly to your Spotify Premium account using the official Web Playback SDK.
