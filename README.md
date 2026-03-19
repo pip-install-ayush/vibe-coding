@@ -12,7 +12,7 @@ A beautiful, glassmorphic web-based music player designed for landscape orientat
 * **Full Playback Controls:** Play, pause, skip, go back, and an interactive hover-to-scrub progress bar.
 * **Smart Autoplay (Gana Bjana):** Never stop the music! When your queue ends, the player automatically finds and plays recommended tracks based on what you were just listening to.
 * **Search Integration:** Instantly search for any song on Spotify and play it with a single click.
-![Gana Bjana - Current Song Screen](Screenshot 2026-03-19 232604.png)
+![Gana Bjana - Current Song Screen](./Screenshot%202026-03-19%20232604.png)
 ## Prerequisites
 
 1.  **A Spotify Premium Account.** The Spotify Web Playback SDK *requires* an active Premium subscription to stream audio.
