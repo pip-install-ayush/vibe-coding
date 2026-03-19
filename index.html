@@ -89,14 +89,21 @@
         }
 
         /* ======= BRANDING ======= */
-        h3.main-title {
+        .header-left {
             position: absolute;
             top: 22px; left: 50px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            z-index: 100;
+        }
+
+        h3.main-title {
+            margin: 0;
             font-size: 20px;
             letter-spacing: 4px;
             text-transform: uppercase;
             font-weight: 700;
-            z-index: 100;
             font-family: 'Poppins', sans-serif;
             background: linear-gradient(135deg, var(--accent-secondary), var(--accent-primary));
             -webkit-background-clip: text;
@@ -104,41 +111,70 @@
             background-clip: text;
         }
 
-        /* ======= SEARCH ======= */
+        .library-btn {
+            background: none;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 5px 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.25s;
+        }
+
+        .library-btn:hover {
+            color: var(--accent-secondary);
+            border-color: var(--accent-secondary);
+            background: rgba(0, 242, 234, 0.06);
+        }
+
+        .library-btn svg {
+            width: 14px; height: 14px;
+            fill: currentColor;
+        }
+
+        /* ======= SEARCH (CENTERED) ======= */
         .fixed-search {
             position: absolute;
-            top: 22px; right: 50px;
+            top: 18px;
+            left: 50%;
+            transform: translateX(-50%);
             display: flex;
             flex-direction: column;
-            align-items: flex-end;
+            align-items: center;
             z-index: 100;
         }
 
         #search-bar {
-            width: 190px;
-            padding: 8px 16px;
-            border-radius: 20px;
+            width: 400px;
+            padding: 10px 20px;
+            border-radius: 24px;
             border: 1px solid rgba(255, 255, 255, 0.08);
             outline: none;
-            background: rgba(255, 255, 255, 0.04);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             color: var(--text-primary);
             font-size: 13px;
             font-family: 'Poppins', sans-serif;
             transition: all 0.3s ease;
+            text-align: center;
         }
 
         #search-bar::placeholder { color: var(--text-secondary); }
 
         #search-bar:focus {
-            width: 260px;
-            background: rgba(255, 255, 255, 0.07);
+            width: 440px;
+            background: rgba(255, 255, 255, 0.08);
             border-color: rgba(255, 255, 255, 0.2);
         }
 
         .search-results {
-            position: absolute;
-            top: 100%; right: 0;
-            width: 310px;
+            width: 400px;
             margin-top: 8px;
             background: rgba(20, 20, 20, 0.95);
             backdrop-filter: blur(25px);
@@ -237,6 +273,52 @@
             text-overflow: ellipsis;
             max-width: 230px;
             font-weight: 300;
+        }
+
+        .artist-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .artist-link {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+            color: var(--text-secondary);
+            transition: color 0.2s;
+        }
+
+        .artist-link:hover {
+            color: var(--accent-secondary);
+        }
+
+        .artist-link svg {
+            width: 12px; height: 12px;
+            fill: currentColor;
+        }
+
+        .artist-link .tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(20, 20, 20, 0.95);
+            color: var(--text-primary);
+            font-size: 10px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+            margin-bottom: 4px;
+        }
+
+        .artist-link:hover .tooltip {
+            opacity: 1;
         }
 
         /* ======= LYRICS (CLEAN, FLOATING) ======= */
@@ -431,6 +513,13 @@
             padding: 20px;
         }
 
+        .section-separator {
+            width: 1px;
+            align-self: stretch;
+            background: rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+        }
+
         .queue-header {
             font-size: 11px;
             font-weight: 600;
@@ -602,7 +691,13 @@
 <div class="bg-blur-layer" id="bg-layer"></div>
 <div class="mesh-overlay" id="mesh-overlay"></div>
 
-<h3 class="main-title">Gana Bjana</h3>
+<div class="header-left">
+    <h3 class="main-title">Gana Bjana</h3>
+    <button class="library-btn" title="Library">
+        <svg viewBox="0 0 24 24"><path d="M20 6H12l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
+        Library
+    </button>
+</div>
 <div class="fixed-search">
     <input type="text" id="search-bar" placeholder="Search Songs..." onkeyup="handleSearch(event)" />
     <ul id="search-results" class="search-results"></ul>
@@ -621,7 +716,13 @@
                 <div class="album-glow" id="album-glow"></div>
             </div>
             <div id="track-name">Song Name</div>
-            <div id="artist-name">Artist</div>
+            <div class="artist-row">
+                <div id="artist-name">Artist</div>
+                <span class="artist-link" id="artist-link" onclick="openArtistProfile()">
+                    <svg viewBox="0 0 24 24"><path d="M19 19H5V5h7V3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/></svg>
+                    <span class="tooltip">View Artist Profile</span>
+                </span>
+            </div>
         </div>
         <div class="center-side">
             <canvas id="wave-canvas"></canvas>
@@ -667,6 +768,7 @@
     </div>
     <div id="status">Idle</div>
 </div>
+<div class="section-separator"></div>
 <div class="queue-sidebar">
     <div class="queue-header">Up Next</div>
     <div class="queue-list" id="queue-list">
@@ -734,6 +836,7 @@
         deviceId = null,
         currentTrackId = null,
         currentArtist = null,
+        currentArtistUri = null,
         isPlaying = false;
     let spotifyReady = false;
     let isAutoplaying = false;
@@ -827,6 +930,7 @@
                 playedTracks.add(t.id);
                 if (playedTracks.size > 200) playedTracks.clear(); // prevent memory bloat
                 currentArtist = t.artists[0].name;
+                currentArtistUri = t.artists[0].uri || null;
                 document.getElementById("track-name").innerText = t.name;
                 document.getElementById("artist-name").innerText = currentArtist;
 
@@ -979,6 +1083,13 @@
             },
         });
         document.getElementById("status").innerText = "Autoplay Ready";
+    }
+
+    function openArtistProfile() {
+        if (currentArtistUri) {
+            const artistId = currentArtistUri.split(':').pop();
+            window.open(`https://open.spotify.com/artist/${artistId}`, '_blank');
+        }
     }
 
     // ========== RECOMMENDATIONS ==========
